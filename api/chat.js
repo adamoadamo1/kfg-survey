@@ -32,7 +32,7 @@ export default async function handler(req) {
       'X-Title': 'KFG Positioning Survey',
     },
     body: JSON.stringify({
-      model: 'anthropic/claude-sonnet-4',
+      model: 'google/gemini-2.5-flash-preview',
       max_tokens: body.max_tokens || 300,
       temperature: body.temperature || 0.7,
       messages: messages,
