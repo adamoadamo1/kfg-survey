@@ -884,9 +884,8 @@ Your rules:
 - If someone gives a short answer and doesn't want to elaborate after one probe, respect that and move on. Don't force it.
 
 Control tokens (CRITICAL — include these exactly as shown):
-- When you have enough signal and are ready to summarize, start your message with exactly "[CONFIRM]" (including brackets) followed by your summary message. Your summary should be: "So what I'm hearing is: [one sentence]. Does that capture it, or would you adjust anything?"
-- After the respondent confirms or adjusts your summary, start your final message with exactly "[CAPTURED]" followed by a brief acknowledgment (e.g., "Got it. Let's move to the next one.").
-- These tokens MUST be the very first characters in your message. No space before them.`;
+- When you have enough signal and are ready to summarize, start your message with exactly "[CONFIRM]" (including brackets) followed by a single-sentence summary of what you heard. Just the summary sentence, nothing else — no question, no "Does that capture it?", no follow-up. Example: "[CONFIRM] KFG is a nonprofit that uses food as a vehicle to help people rebuild their lives through paid culinary training."
+- The "[CONFIRM]" token MUST be the very first characters in your message. No space before it.`;
 
 const ROLE_PROMPTS = {
   'Leadership': `The respondent is in a leadership role. They likely think strategically and may give polished, big-picture answers. Your job is to push them toward specificity — concrete examples, specific people, particular moments that illustrate their strategic claims. If they say "we're an economic engine," ask what the engine produces for a specific person.`,
@@ -1210,16 +1209,16 @@ async function handleUserMessage(text) {
             tokenChecked = true;
             if (tokenBuffer.startsWith('[CONFIRM]')) {
               qState.phase = 'confirming';
-              displayText = tokenBuffer.slice(9);
-            } else if (tokenBuffer.startsWith('[CAPTURED]')) {
-              qState.phase = 'distilling';
-              displayText = tokenBuffer.slice(10);
+              // Remove the empty bubble — we'll show a review card instead
+              if (bubble) { bubble.remove(); bubble = null; }
+              return;
             } else {
               displayText = tokenBuffer;
             }
             updateBubbleText(bubble, displayText.trimStart());
           }
         } else {
+          if (qState.phase === 'confirming') return; // Don't render [CONFIRM] text to bubble
           displayText += token;
           updateBubbleText(bubble, displayText.trimStart());
         }
@@ -1230,28 +1229,26 @@ async function handleUserMessage(text) {
           tokenChecked = true;
           if (tokenBuffer.startsWith('[CONFIRM]')) {
             qState.phase = 'confirming';
-            displayText = tokenBuffer.slice(9);
-          } else if (tokenBuffer.startsWith('[CAPTURED]')) {
-            qState.phase = 'distilling';
-            displayText = tokenBuffer.slice(10);
+            if (bubble) { bubble.remove(); bubble = null; }
           } else {
             displayText = tokenBuffer;
+            updateBubbleText(bubble, displayText.trimStart());
           }
-          updateBubbleText(bubble, displayText.trimStart());
         }
 
         // Store the full text without control tokens
         let storedContent = fullText;
         if (fullText.startsWith('[CONFIRM]')) storedContent = fullText.slice(9).trimStart();
-        if (fullText.startsWith('[CAPTURED]')) storedContent = fullText.slice(10).trimStart();
         qState.messages.push({ role: 'assistant', content: storedContent });
 
-        if (qState.phase === 'distilling') {
-          console.log('[DEBUG] ✅ [CAPTURED] detected for', questionKey, '— calling handleCapture');
+        if (qState.phase === 'confirming') {
+          console.log('[DEBUG] ✅ [CONFIRM] detected for', questionKey, '— showing review card directly');
           isProcessing = false;
-          handleCapture(questionKey);
+          // Extract just the summary sentence from the confirm text
+          var summaryText = fullText.slice(9).trimStart();
+          showReviewCard(questionKey, summaryText);
         } else {
-          console.log('[DEBUG] Stream complete for', questionKey, '— phase:', qState.phase, '(not distilling, waiting for more input)');
+          console.log('[DEBUG] Stream complete for', questionKey, '— phase:', qState.phase);
           isProcessing = false;
           setInputEnabled(true);
         }
@@ -1259,7 +1256,9 @@ async function handleUserMessage(text) {
       function(err) {
         console.error('Stream error:', err);
         isProcessing = false;
-        updateBubbleText(bubble, displayText || 'Something went wrong. Please try again.');
+        if (bubble) {
+          updateBubbleText(bubble, displayText || 'Something went wrong. Please try again.');
+        }
         setInputEnabled(true);
       }
     );
@@ -1273,25 +1272,16 @@ async function handleUserMessage(text) {
   }
 }
 
-async function handleCapture(questionKey) {
-  console.log('[DEBUG] handleCapture started for', questionKey);
-  setInputEnabled(false);
 
-  try {
-    console.log('[DEBUG] Starting distillation for', questionKey);
-    await runDistillation(questionKey);
-    console.log('[DEBUG] Distillation complete for', questionKey, '— distilled:', JSON.stringify(appState.questions[questionKey].distilled));
-  } catch (err) {
-    console.error('[DEBUG] ❌ Distillation error for', questionKey, ':', err);
+function showReviewCard(questionKey, summaryText) {
+  // Use passed summaryText (from [CONFIRM]) or fall back to distilled data
+  var summary;
+  if (summaryText) {
+    summary = summaryText;
+  } else {
+    const d = appState.questions[questionKey].distilled;
+    summary = (d && d.confirmed_summary) ? d.confirmed_summary : '';
   }
-
-  // Show review card for user to edit before submitting
-  showReviewCard(questionKey);
-}
-
-function showReviewCard(questionKey) {
-  const d = appState.questions[questionKey].distilled;
-  const summary = (d && d.confirmed_summary) ? d.confirmed_summary : '';
 
   // Hide chat input
   $chatInputArea.classList.remove('visible');
@@ -1303,7 +1293,7 @@ function showReviewCard(questionKey) {
 
   const label = document.createElement('span');
   label.className = 'review-label';
-  label.textContent = "Here\u2019s what we captured. Feel free to edit before submitting.";
+  label.textContent = "So what I\u2019m hearing is:";
   card.appendChild(label);
 
   const textarea = document.createElement('textarea');
@@ -1625,6 +1615,7 @@ function goToStep(newStep) {
     // Submit final if entering thank you
     if (newStep === 7) {
       submitFinalResponse();
+      setTimeout(launchConfetti, 400);
     }
   }
 
@@ -1726,6 +1717,62 @@ $chatTextarea.addEventListener('input', function() {
   $chatTextarea.style.height = Math.min($chatTextarea.scrollHeight, 120) + 'px';
   updateSendButtonState();
 });
+
+// ============ CONFETTI ============
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = ['#3E503C', '#4A6347', '#B8860B', '#D4A84B', '#E8E4DF', '#FAF6F1'];
+  const pieces = [];
+  for (let i = 0; i < 120; i++) {
+    pieces.push({
+      x: canvas.width * 0.5 + (Math.random() - 0.5) * canvas.width * 0.4,
+      y: canvas.height * 0.45,
+      vx: (Math.random() - 0.5) * 12,
+      vy: -Math.random() * 14 - 4,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 6 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2,
+      rv: (Math.random() - 0.5) * 0.3,
+      opacity: 1,
+    });
+  }
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of pieces) {
+      p.x += p.vx;
+      p.vy += 0.25;
+      p.y += p.vy;
+      p.rot += p.rv;
+      if (frame > 60) p.opacity = Math.max(0, p.opacity - 0.02);
+      if (p.opacity <= 0) continue;
+      alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    frame++;
+    if (alive && frame < 180) {
+      requestAnimationFrame(draw);
+    } else {
+      canvas.remove();
+    }
+  }
+  requestAnimationFrame(draw);
+}
 
 // ============ INIT ============
 document.addEventListener('DOMContentLoaded', function() {
