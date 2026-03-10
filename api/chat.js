@@ -40,6 +40,14 @@ export default async function handler(req) {
     }),
   });
 
+  if (!response.ok) {
+    const errorBody = await response.text();
+    return new Response(JSON.stringify({ error: 'Upstream API error', status: response.status, detail: errorBody }), {
+      status: response.status,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  }
+
   return new Response(response.body, {
     headers: {
       'Content-Type': 'text/event-stream',

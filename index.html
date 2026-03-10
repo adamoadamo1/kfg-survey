@@ -659,41 +659,41 @@
       <h2 class="setup-headline">First, who are you?</h2>
       <p class="setup-subtext">So we can tailor the conversation to your perspective.</p>
       <label class="input-label" for="nameInput">Your Name</label>
-      <input type="text" class="text-input" id="nameInput" placeholder="First and last name" autocomplete="name">
+      <input type="text" class="text-input" id="nameInput" placeholder="First and last name" autocomplete="name" maxlength="100">
       <label class="input-label">Your Role</label>
       <div class="role-grid">
-        <div class="role-card" data-role="Leadership">
+        <div class="role-card" data-role="Leadership" role="button" tabindex="0">
           <div class="role-card-title">Leadership</div>
           <div class="role-card-subtitle">CEO, Director, VP</div>
         </div>
-        <div class="role-card" data-role="Program Staff">
+        <div class="role-card" data-role="Program Staff" role="button" tabindex="0">
           <div class="role-card-title">Program Staff</div>
           <div class="role-card-subtitle">Instructor, Coach, Case Manager</div>
         </div>
-        <div class="role-card" data-role="Development">
+        <div class="role-card" data-role="Development" role="button" tabindex="0">
           <div class="role-card-title">Development</div>
           <div class="role-card-subtitle">Fundraising, Comms, Marketing</div>
         </div>
-        <div class="role-card" data-role="Operations">
+        <div class="role-card" data-role="Operations" role="button" tabindex="0">
           <div class="role-card-title">Operations</div>
           <div class="role-card-subtitle">Admin, Finance, HR</div>
         </div>
-        <div class="role-card" data-role="Board Member">
+        <div class="role-card" data-role="Board Member" role="button" tabindex="0">
           <div class="role-card-title">Board Member</div>
         </div>
-        <div class="role-card" data-role="Other">
+        <div class="role-card" data-role="Other" role="button" tabindex="0">
           <div class="role-card-title">Other</div>
         </div>
       </div>
       <div class="other-role-wrapper" id="otherRoleWrapper">
-        <input type="text" class="text-input" id="otherRoleInput" placeholder="Your role">
+        <input type="text" class="text-input" id="otherRoleInput" placeholder="Your role" maxlength="100">
       </div>
     </div>
 
     <!-- Steps 2-6: Chat -->
     <div class="step" id="step2">
       <div class="chat-container">
-        <div class="messages-thread" id="messagesThread"></div>
+        <div class="messages-thread" id="messagesThread" aria-live="polite"></div>
         <div class="typing-indicator" id="typingIndicator">
           <span class="dot"></span>
           <span class="dot"></span>
@@ -729,7 +729,7 @@
 <div class="chat-input-area" id="chatInputArea">
   <div class="chat-input-wrapper">
     <textarea class="chat-textarea" id="chatTextarea" rows="1" placeholder="Type your response..."></textarea>
-    <button class="send-btn" id="sendBtn" disabled>
+    <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="19" x2="12" y2="5"></line>
         <polyline points="5 12 12 5 19 12"></polyline>
@@ -963,33 +963,41 @@ async function parseSSEStream(response, onToken, onComplete, onError) {
   const reader = response.body.getReader();
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
+  let completed = false;
+
+  function finish() {
+    if (!completed) {
+      completed = true;
+      onComplete();
+    }
+  }
 
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        onComplete();
+      var result = await reader.read();
+      if (result.done) {
+        finish();
         break;
       }
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
+      buffer += decoder.decode(result.value, { stream: true });
+      var lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
-      for (const line of lines) {
-        const trimmed = line.trim();
+      for (var i = 0; i < lines.length; i++) {
+        var trimmed = lines[i].trim();
         if (!trimmed || trimmed.startsWith(':')) continue;
         if (!trimmed.startsWith('data: ')) continue;
 
-        const data = trimmed.slice(6);
+        var data = trimmed.slice(6);
         if (data === '[DONE]') {
-          onComplete();
+          finish();
           return;
         }
 
         try {
-          const parsed = JSON.parse(data);
-          const content = parsed.choices?.[0]?.delta?.content;
+          var parsed = JSON.parse(data);
+          var content = parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content;
           if (content) {
             onToken(content);
           }
@@ -999,11 +1007,14 @@ async function parseSSEStream(response, onToken, onComplete, onError) {
       }
     }
   } catch (err) {
-    onError(err);
+    if (!completed) {
+      onError(err);
+    }
   }
 }
 
 // ============ CONVERSATION ENGINE ============
+let isProcessing = false;
 function getQuestionKeyForStep(step) {
   const map = { 2: 'q1', 3: 'q2', 4: 'q3', 5: 'q4', 6: 'q5' };
   return map[step];
@@ -1060,8 +1071,10 @@ async function startQuestion(questionKey) {
 }
 
 async function handleUserMessage(text) {
+  if (isProcessing) return;
   const questionKey = getQuestionKeyForStep(appState.currentStep);
   if (!questionKey) return;
+  isProcessing = true;
 
   const qState = appState.questions[questionKey];
 
@@ -1138,19 +1151,23 @@ async function handleUserMessage(text) {
         qState.messages.push({ role: 'assistant', content: storedContent });
 
         if (qState.phase === 'distilling') {
+          isProcessing = false;
           handleCapture(questionKey);
         } else {
+          isProcessing = false;
           setInputEnabled(true);
         }
       },
       function(err) {
         console.error('Stream error:', err);
+        isProcessing = false;
         updateBubbleText(bubble, displayText || 'Something went wrong. Please try again.');
         setInputEnabled(true);
       }
     );
   } catch (err) {
     console.error('Chat error:', err);
+    isProcessing = false;
     hideTypingIndicator();
     var errorBubble = createEmptyAIBubble();
     updateBubbleText(errorBubble, 'Something went wrong. Please try again.');
@@ -1247,16 +1264,14 @@ async function postToSheet(type, data) {
     console.warn('GOOGLE_SCRIPT_URL not configured, skipping sheet submission');
     return;
   }
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ type: type, ...data }),
-    });
-  } catch (err) {
-    console.error('Sheet submission error:', err);
-  }
+  // no-cors means opaque response — we can only detect network errors (thrown)
+  // so we let fetch throw on network failure for retry logic to catch
+  await fetch(GOOGLE_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: type, ...data }),
+  });
 }
 
 async function retryPost(fn, maxRetries) {
@@ -1546,20 +1561,29 @@ $backBtn.addEventListener('click', function() {
   // Don't allow back during chat steps
 });
 
+function selectRoleCard(card) {
+  $roleCards.forEach(function(c) { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
+  card.classList.add('selected');
+  card.setAttribute('aria-pressed', 'true');
+  appState.respondent.role = card.dataset.role;
+
+  if (card.dataset.role === 'Other') {
+    $otherRoleWrapper.classList.add('visible');
+    setTimeout(function() { $otherRoleInput.focus(); }, 100);
+  } else {
+    $otherRoleWrapper.classList.remove('visible');
+  }
+
+  validateNameRole();
+}
+
 $roleCards.forEach(function(card) {
-  card.addEventListener('click', function() {
-    $roleCards.forEach(function(c) { c.classList.remove('selected'); });
-    card.classList.add('selected');
-    appState.respondent.role = card.dataset.role;
-
-    if (card.dataset.role === 'Other') {
-      $otherRoleWrapper.classList.add('visible');
-      setTimeout(function() { $otherRoleInput.focus(); }, 100);
-    } else {
-      $otherRoleWrapper.classList.remove('visible');
+  card.addEventListener('click', function() { selectRoleCard(card); });
+  card.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      selectRoleCard(card);
     }
-
-    validateNameRole();
   });
 });
 
