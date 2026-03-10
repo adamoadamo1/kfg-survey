@@ -568,6 +568,67 @@
     pointer-events: none;
   }
 
+  /* Review card (editable summary before sheet submission) */
+  .review-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .review-label {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .review-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px;
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 200ms ease;
+  }
+
+  .review-textarea:focus {
+    border-color: var(--green);
+  }
+
+  .review-submit-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    margin-top: 12px;
+    display: block;
+    width: 100%;
+  }
+
+  .review-submit-btn:hover {
+    background: var(--green-light);
+    transform: translateY(-0.5px);
+    box-shadow: 0 4px 12px rgba(62, 80, 60, 0.15);
+  }
+
   /* Thank you screen */
   .thankyou-content {
     text-align: center;
@@ -1220,23 +1281,75 @@ async function handleCapture(questionKey) {
     console.log('[DEBUG] Starting distillation for', questionKey);
     await runDistillation(questionKey);
     console.log('[DEBUG] Distillation complete for', questionKey, '— distilled:', JSON.stringify(appState.questions[questionKey].distilled));
-    // Submit this question's answer to Google Sheets immediately
-    console.log('[DEBUG] Submitting answer to Google Sheets for', questionKey);
-    await submitQuestionAnswer(questionKey);
-    console.log('[DEBUG] ✅ Sheet submission complete for', questionKey);
   } catch (err) {
-    console.error('[DEBUG] ❌ Capture error for', questionKey, ':', err);
+    console.error('[DEBUG] ❌ Distillation error for', questionKey, ':', err);
   }
 
-  // Advance regardless of success/failure
-  await new Promise(function(resolve) { setTimeout(resolve, 500); });
-  const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
-  const currentIndex = qKeys.indexOf(questionKey);
-  if (currentIndex < 4) {
-    goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
-  } else {
-    goToStep(7);
-  }
+  // Show review card for user to edit before submitting
+  showReviewCard(questionKey);
+}
+
+function showReviewCard(questionKey) {
+  const d = appState.questions[questionKey].distilled;
+  const summary = (d && d.confirmed_summary) ? d.confirmed_summary : '';
+
+  // Hide chat input
+  $chatInputArea.classList.remove('visible');
+
+  // Build review card
+  const card = document.createElement('div');
+  card.className = 'review-card';
+  card.id = 'reviewCard';
+
+  const label = document.createElement('span');
+  label.className = 'review-label';
+  label.textContent = "Here\u2019s what we captured. Feel free to edit before submitting.";
+  card.appendChild(label);
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'review-textarea';
+  textarea.value = summary;
+  card.appendChild(textarea);
+
+  const btn = document.createElement('button');
+  btn.className = 'review-submit-btn';
+  btn.textContent = 'Submit & Continue';
+  btn.addEventListener('click', async function() {
+    btn.disabled = true;
+    btn.textContent = 'Submitting\u2026';
+
+    // Update state with possibly edited text
+    const editedText = textarea.value.trim();
+    if (appState.questions[questionKey].distilled) {
+      appState.questions[questionKey].distilled.confirmed_summary = editedText;
+    } else {
+      appState.questions[questionKey].distilled = { confirmed_summary: editedText };
+    }
+
+    try {
+      console.log('[DEBUG] Submitting answer to Google Sheets for', questionKey);
+      await submitQuestionAnswer(questionKey);
+      console.log('[DEBUG] ✅ Sheet submission complete for', questionKey);
+    } catch (err) {
+      console.error('[DEBUG] ❌ Submit error for', questionKey, ':', err);
+    }
+
+    // Remove review card and advance
+    card.remove();
+
+    await new Promise(function(resolve) { setTimeout(resolve, 500); });
+    const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+    const currentIndex = qKeys.indexOf(questionKey);
+    if (currentIndex < 4) {
+      goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
+    } else {
+      goToStep(7);
+    }
+  });
+  card.appendChild(btn);
+
+  $messagesThread.appendChild(card);
+  $messagesThread.scrollTop = $messagesThread.scrollHeight;
 }
 
 // ============ DISTILLATION ============
