@@ -1180,27 +1180,20 @@ async function handleCapture(questionKey) {
 
   try {
     await runDistillation(questionKey);
-
-    // Wait then advance
-    await new Promise(function(resolve) { setTimeout(resolve, 500); });
-
-    const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
-    const currentIndex = qKeys.indexOf(questionKey);
-    if (currentIndex < 4) {
-      goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
-    } else {
-      goToStep(7);
-    }
+    // Submit this question's answer to Google Sheets immediately
+    await submitQuestionAnswer(questionKey);
   } catch (err) {
     console.error('Capture error:', err);
-    // Still try to advance even on distillation failure
-    const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
-    const currentIndex = qKeys.indexOf(questionKey);
-    if (currentIndex < 4) {
-      goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
-    } else {
-      goToStep(7);
-    }
+  }
+
+  // Advance regardless of success/failure
+  await new Promise(function(resolve) { setTimeout(resolve, 500); });
+  const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+  const currentIndex = qKeys.indexOf(questionKey);
+  if (currentIndex < 4) {
+    goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
+  } else {
+    goToStep(7);
   }
 }
 
@@ -1285,45 +1278,42 @@ async function retryPost(fn, maxRetries) {
   }
 }
 
-async function submitFinalResponse() {
+async function submitQuestionAnswer(questionKey) {
   const role = appState.respondent.role === 'Other'
     ? appState.respondent.roleCustom
     : appState.respondent.role;
-
-  const row = {
-    name: appState.respondent.name,
-    role: role,
-    q1: '',
-    q2: '',
-    q3: '',
-    q4: '',
-    q5: '',
-  };
-
-  var qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
-  for (var i = 0; i < qKeys.length; i++) {
-    var d = appState.questions[qKeys[i]].distilled;
-    if (d && d.confirmed_summary) {
-      row[qKeys[i]] = d.confirmed_summary;
-    }
-  }
+  const d = appState.questions[questionKey].distilled;
+  const answer = (d && d.confirmed_summary) ? d.confirmed_summary : '';
 
   try {
     await retryPost(function() {
-      return postToSheet('response', row);
+      return postToSheet('answer', {
+        name: appState.respondent.name,
+        role: role,
+        question: questionKey,
+        question_title: QUESTIONS[questionKey].title,
+        answer: answer,
+      });
     });
-    appState.submissions.complete = true;
+    appState.submissions[questionKey] = true;
   } catch (err) {
-    console.error('Submit final response error:', err);
+    console.error('Submit answer error for ' + questionKey + ':', err);
     try {
       localStorage.setItem('kfg_backup_' + Date.now(), JSON.stringify({
-        type: 'response',
-        ...row,
+        type: 'answer',
+        name: appState.respondent.name,
+        role: role,
+        question: questionKey,
+        answer: answer,
       }));
     } catch (e) {
       console.error('localStorage fallback failed:', e);
     }
   }
+}
+
+async function submitFinalResponse() {
+  // Answers are submitted per-question now, nothing to do here
 }
 
 // ============ UI RENDERING ============

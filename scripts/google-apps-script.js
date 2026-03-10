@@ -7,9 +7,7 @@
 // 2. Create one tab: "Responses"
 //
 // 3. "Responses" tab headers (Row 1):
-//    A: timestamp | B: name | C: role | D: q1_what_is_kfg |
-//    E: q2_who_matters | F: q3_what_replaces | G: q4_whats_different |
-//    H: q5_ten_second_belief
+//    A: timestamp | B: name | C: role | D: question | E: question_title | F: answer
 //
 // 4. Go to Extensions > Apps Script
 // 5. Paste this entire script
@@ -31,11 +29,9 @@ function doPost(e) {
       new Date().toISOString(),
       data.name || "",
       data.role || "",
-      data.q1 || "",
-      data.q2 || "",
-      data.q3 || "",
-      data.q4 || "",
-      data.q5 || "",
+      data.question || "",
+      data.question_title || "",
+      data.answer || "",
     ]);
 
     return ContentService
