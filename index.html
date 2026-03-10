@@ -1151,9 +1151,11 @@ async function handleUserMessage(text) {
         qState.messages.push({ role: 'assistant', content: storedContent });
 
         if (qState.phase === 'distilling') {
+          console.log('[DEBUG] ✅ [CAPTURED] detected for', questionKey, '— calling handleCapture');
           isProcessing = false;
           handleCapture(questionKey);
         } else {
+          console.log('[DEBUG] Stream complete for', questionKey, '— phase:', qState.phase, '(not distilling, waiting for more input)');
           isProcessing = false;
           setInputEnabled(true);
         }
@@ -1176,14 +1178,19 @@ async function handleUserMessage(text) {
 }
 
 async function handleCapture(questionKey) {
+  console.log('[DEBUG] handleCapture started for', questionKey);
   setInputEnabled(false);
 
   try {
+    console.log('[DEBUG] Starting distillation for', questionKey);
     await runDistillation(questionKey);
+    console.log('[DEBUG] Distillation complete for', questionKey, '— distilled:', JSON.stringify(appState.questions[questionKey].distilled));
     // Submit this question's answer to Google Sheets immediately
+    console.log('[DEBUG] Submitting answer to Google Sheets for', questionKey);
     await submitQuestionAnswer(questionKey);
+    console.log('[DEBUG] ✅ Sheet submission complete for', questionKey);
   } catch (err) {
-    console.error('Capture error:', err);
+    console.error('[DEBUG] ❌ Capture error for', questionKey, ':', err);
   }
 
   // Advance regardless of success/failure
@@ -1214,8 +1221,11 @@ async function runDistillation(questionKey) {
 
   const userMessage = 'RESPONDENT: ' + appState.respondent.name + ' (' + role + ')\nQUESTION: ' + QUESTIONS[questionKey].title + '\n\nTRANSCRIPT:\n---\n' + transcript + '\n---';
 
+  console.log('[DEBUG] Sending distillation request for', questionKey);
   const responseText = await sendDistillRequest(DISTILLATION_SYSTEM_PROMPT, userMessage);
+  console.log('[DEBUG] Distillation raw response:', responseText);
   const distilled = parseDistillation(responseText);
+  console.log('[DEBUG] Parsed distillation:', JSON.stringify(distilled));
 
   qState.distilled = distilled;
   qState.transcript = transcript;
@@ -1252,13 +1262,17 @@ function parseDistillation(responseText) {
 
 // ============ GOOGLE SHEETS SUBMISSION ============
 async function postToSheet(type, data) {
+  const payload = { type: type, ...data };
+  console.log('[DEBUG] postToSheet payload:', JSON.stringify(payload));
   const resp = await fetch(SHEETS_API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: type, ...data }),
+    body: JSON.stringify(payload),
   });
+  const respText = await resp.text();
+  console.log('[DEBUG] postToSheet response:', resp.status, respText);
   if (!resp.ok) {
-    throw new Error('Sheet submission failed: ' + resp.status);
+    throw new Error('Sheet submission failed: ' + resp.status + ' ' + respText);
   }
 }
 
