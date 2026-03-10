@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Kitchens for Good — Positioning Survey</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #FAFAF8;
+    --bg-muted: #F5F3F0;
+    --white: #FFFFFF;
+    --ink: #1A1A1A;
+    --ink-soft: #444444;
+    --ink-muted: #6B6B6B;
+    --green: #3E503C;
+    --green-light: #4A6347;
+    --green-pale: #F0F4EF;
+    --gold: #B8860B;
+    --gold-secondary: #D4A84B;
+    --gold-pale: #FAF6F1;
+    --border: #E8E4DF;
+    --error: #DC2626;
+    --error-bg: #FEF2F2;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'Source Sans 3', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  .app-container {
+    max-width: 640px;
+    margin: 0 auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 32px;
+  }
+
+  header {
+    padding-top: 32px;
+    flex-shrink: 0;
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px;
+  }
+
+  .header-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  .header-title {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+
+  .progress-container {
+    margin-top: 20px;
+    transition: opacity 300ms ease;
+  }
+
+  .progress-container.hidden {
+    display: none;
+  }
+
+  .progress-track {
+    height: 3px;
+    background: var(--bg-muted);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    width: 0%;
+    transition: width 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .progress-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-top: 8px;
+  }
+
+  /* Step containers */
+  .step {
+    display: none;
+  }
+
+  .step.active {
+    display: block;
+  }
+
+  .step.fade-out {
+    animation: fadeOut 200ms ease forwards;
+  }
+
+  .step.fade-in {
+    animation: fadeIn 300ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+  }
+
+  /* Welcome screen */
+  .welcome-headline {
+    font-family: var(--serif);
+    font-size: 28px;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-top: 48px;
+    font-weight: 400;
+  }
+
+  .rule-line {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  .context-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px 24px;
+    border-top: 2px solid var(--gold);
+  }
+
+  .context-card p {
+    font-size: 15px;
+    font-family: var(--sans);
+    color: var(--ink-soft);
+    line-height: 1.75;
+    margin-bottom: 16px;
+  }
+
+  .context-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .preview-item {
+    background: var(--bg-muted);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* Name/Role screen */
+  .setup-headline {
+    font-family: var(--serif);
+    font-size: 28px;
+    margin-top: 40px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .setup-subtext {
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+  }
+
+  .input-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+    margin-top: 32px;
+    display: block;
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px !important;
+    font-family: var(--sans);
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .text-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.08);
+  }
+
+  .text-input::placeholder {
+    color: var(--ink-muted);
+  }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .role-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+  }
+
+  .role-card:hover {
+    border-color: var(--border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .role-card.selected {
+    border-color: var(--green);
+    background: var(--green-pale);
+    border-width: 1.5px;
+  }
+
+  .role-card-title {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .role-card-subtitle {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+
+  .other-role-wrapper {
+    display: none;
+    margin-top: 12px;
+  }
+
+  .other-role-wrapper.visible {
+    display: block;
+  }
+
+  /* Chat interface */
+  .chat-container {
+    display: flex;
+    flex-direction: column;
+    padding-top: 24px;
+  }
+
+  .messages-thread {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 24px;
+  }
+
+  .message {
+    max-width: 85%;
+    padding: 14px 16px;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    animation: fadeSlideUp 250ms ease;
+  }
+
+  .assistant-message {
+    align-self: flex-start;
+    background: var(--white);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 2px 12px 12px 12px;
+    color: var(--ink-soft);
+  }
+
+  .user-message {
+    align-self: flex-end;
+    background: var(--green);
+    color: white;
+    border-radius: 12px 2px 12px 12px;
+    animation-duration: 150ms;
+  }
+
+  .typing-indicator {
+    display: none;
+    align-self: flex-start;
+    padding: 14px 16px;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .typing-indicator.visible {
+    display: flex;
+  }
+
+  .typing-indicator .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    animation: dotPulse 600ms ease-in-out infinite;
+  }
+
+  .typing-indicator .dot:nth-child(2) {
+    animation-delay: 150ms;
+  }
+
+  .typing-indicator .dot:nth-child(3) {
+    animation-delay: 300ms;
+  }
+
+  /* Chat input area */
+  .chat-input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: none;
+    z-index: 100;
+  }
+
+  .chat-input-area.visible {
+    display: block;
+  }
+
+  .chat-input-wrapper {
+    max-width: 640px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .chat-textarea {
+    width: 100%;
+    font-size: 16px;
+    font-family: var(--sans);
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 24px;
+    padding: 12px 48px 12px 18px;
+    resize: none;
+    max-height: 120px;
+    overflow-y: auto;
+    outline: none;
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+    line-height: 1.5;
+    color: var(--ink);
+  }
+
+  .chat-textarea:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.08);
+  }
+
+  .chat-textarea::placeholder {
+    color: var(--ink-muted);
+  }
+
+  .send-btn {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: color 200ms ease;
+    padding: 0;
+  }
+
+  .send-btn svg {
+    width: 18px;
+    height: 18px;
+    transition: color 200ms ease;
+  }
+
+  .send-btn.active svg {
+    color: var(--green);
+  }
+
+  .send-btn:not(.active) svg {
+    color: var(--border);
+  }
+
+  .send-btn:disabled {
+    cursor: default;
+  }
+
+  /* Bottom bar */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 100;
+  }
+
+  .bottom-bar.hidden {
+    display: none;
+  }
+
+  .bottom-bar-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .back-btn {
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 16px;
+    transition: color 200ms ease;
+  }
+
+  .back-btn:hover {
+    color: var(--ink);
+  }
+
+  .back-btn.hidden {
+    visibility: hidden;
+  }
+
+  .continue-btn {
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+  }
+
+  .continue-btn:hover:not(:disabled) {
+    background: var(--green-light);
+    transform: translateY(-0.5px);
+    box-shadow: 0 4px 12px rgba(62, 80, 60, 0.15);
+  }
+
+  .continue-btn:disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  /* Thank you screen */
+  .thankyou-content {
+    text-align: center;
+    padding-top: 80px;
+  }
+
+  .thankyou-check {
+    width: 56px;
+    height: 56px;
+    background: var(--green-pale);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .thankyou-check svg {
+    width: 24px;
+    height: 24px;
+    color: var(--green);
+  }
+
+  .thankyou-headline {
+    font-family: var(--serif);
+    font-size: 28px;
+    margin-top: 24px;
+    font-weight: 400;
+    color: var(--ink);
+  }
+
+  .thankyou-body {
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink-soft);
+    max-width: 400px;
+    margin: 12px auto 0;
+    line-height: 1.75;
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .app-container {
+      padding: 0 24px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .role-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .welcome-headline,
+    .setup-headline,
+    .thankyou-headline {
+      font-size: 24px;
+    }
+
+    .preview-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .context-card p {
+      font-size: 14px;
+    }
+
+    .message {
+      font-size: 14px;
+    }
+  }
+</style>
+
+<div class="app-container">
+  <header>
+    <div class="header-label">Kitchens for Good</div>
+    <h1 class="header-title">Positioning Survey</h1>
+    <div class="progress-container hidden" id="progressContainer">
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Step 0: Welcome -->
+    <div class="step" id="step0">
+      <h2 class="welcome-headline">We're figuring out how to talk about what we do.</h2>
+      <hr class="rule-line">
+      <div class="context-card">
+        <p>We're redesigning the Kitchens for Good website, and we want it to sound like us — not like a brochure. So we're asking the people who know KFG best to help us figure out the right language.</p>
+        <p>You'll have a short conversation with an AI interviewer about 5 positioning questions. It's not a test — there are no wrong answers. We're after your real words, not polished ones.</p>
+        <p><strong>Takes about 5-10 minutes.</strong></p>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-item">What is KFG?</div>
+        <div class="preview-item">Who matters most?</div>
+        <div class="preview-item">What do we replace?</div>
+        <div class="preview-item">What makes us different?</div>
+      </div>
+    </div>
+
+    <!-- Step 1: Name/Role -->
+    <div class="step" id="step1">
+      <h2 class="setup-headline">First, who are you?</h2>
+      <p class="setup-subtext">So we can tailor the conversation to your perspective.</p>
+      <label class="input-label" for="nameInput">Your Name</label>
+      <input type="text" class="text-input" id="nameInput" placeholder="First and last name" autocomplete="name">
+      <label class="input-label">Your Role</label>
+      <div class="role-grid">
+        <div class="role-card" data-role="Leadership">
+          <div class="role-card-title">Leadership</div>
+          <div class="role-card-subtitle">CEO, Director, VP</div>
+        </div>
+        <div class="role-card" data-role="Program Staff">
+          <div class="role-card-title">Program Staff</div>
+          <div class="role-card-subtitle">Instructor, Coach, Case Manager</div>
+        </div>
+        <div class="role-card" data-role="Development">
+          <div class="role-card-title">Development</div>
+          <div class="role-card-subtitle">Fundraising, Comms, Marketing</div>
+        </div>
+        <div class="role-card" data-role="Operations">
+          <div class="role-card-title">Operations</div>
+          <div class="role-card-subtitle">Admin, Finance, HR</div>
+        </div>
+        <div class="role-card" data-role="Board Member">
+          <div class="role-card-title">Board Member</div>
+        </div>
+        <div class="role-card" data-role="Other">
+          <div class="role-card-title">Other</div>
+        </div>
+      </div>
+      <div class="other-role-wrapper" id="otherRoleWrapper">
+        <input type="text" class="text-input" id="otherRoleInput" placeholder="Your role">
+      </div>
+    </div>
+
+    <!-- Steps 2-6: Chat -->
+    <div class="step" id="step2">
+      <div class="chat-container">
+        <div class="messages-thread" id="messagesThread"></div>
+        <div class="typing-indicator" id="typingIndicator">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7: Thank You -->
+    <div class="step" id="step7">
+      <div class="thankyou-content">
+        <div class="thankyou-check">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <h2 class="thankyou-headline">Thank you.</h2>
+        <p class="thankyou-body">Your perspective helps us build something that actually sounds like us. We'll share what we learn from everyone's responses soon.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Bottom bar -->
+<div class="bottom-bar" id="bottomBar">
+  <div class="bottom-bar-inner">
+    <button class="back-btn hidden" id="backBtn">Back</button>
+    <button class="continue-btn" id="continueBtn">Get Started</button>
+  </div>
+</div>
+
+<!-- Chat input area -->
+<div class="chat-input-area" id="chatInputArea">
+  <div class="chat-input-wrapper">
+    <textarea class="chat-textarea" id="chatTextarea" rows="1" placeholder="Type your response..."></textarea>
+    <button class="send-btn" id="sendBtn" disabled>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="19" x2="12" y2="5"></line>
+        <polyline points="5 12 12 5 19 12"></polyline>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+// ============ CONFIG ============
+const GOOGLE_SCRIPT_URL = '';
+
+const QUESTIONS = {
+  q1: { key: 'q1', title: 'What is KFG?', step: 2, progress: 28 },
+  q2: { key: 'q2', title: 'Who matters most?', step: 3, progress: 42 },
+  q3: { key: 'q3', title: 'What does KFG replace?', step: 4, progress: 57 },
+  q4: { key: 'q4', title: 'What makes KFG different?', step: 5, progress: 71 },
+  q5: { key: 'q5', title: 'The 10-second belief', step: 6, progress: 85 },
+};
+
+// ============ STATE ============
+const appState = {
+  currentStep: 0,
+  respondent: {
+    name: '',
+    role: '',
+    roleCustom: '',
+  },
+  questions: {
+    q1: { messages: [], exchangeCount: 0, phase: 'idle', distilled: null, transcript: '' },
+    q2: { messages: [], exchangeCount: 0, phase: 'idle', distilled: null, transcript: '' },
+    q3: { messages: [], exchangeCount: 0, phase: 'idle', distilled: null, transcript: '' },
+    q4: { messages: [], exchangeCount: 0, phase: 'idle', distilled: null, transcript: '' },
+    q5: { messages: [], exchangeCount: 0, phase: 'idle', distilled: null, transcript: '' },
+  },
+  submissions: {
+    q1: false, q2: false, q3: false, q4: false, q5: false, complete: false,
+  },
+};
+
+// ============ PROMPT CONSTANTS ============
+const BASE_PROMPT = `You are a research interviewer helping Kitchens for Good understand how its own team describes the organization. This is part of a positioning exercise to inform a website redesign.
+
+Your personality:
+- Warm but direct. Curious. Never sycophantic.
+- You sound like a smart colleague asking genuine questions over coffee.
+- You are not a therapist, coach, or cheerleader.
+
+Your rules:
+- NEVER suggest answers or put words in the respondent's mouth.
+- NEVER validate with "Great answer!" or "That's wonderful!" or "I love that!"
+- NEVER use exclamation points.
+- Keep every response to 1-3 sentences. You are not the focus — they are.
+- Ask for specific examples, stories, and real moments whenever possible.
+- If someone gives a generic or institutional answer (sounds like it could be on a website), acknowledge it warmly and then push for their own words.
+- If someone gives a short answer and doesn't want to elaborate after one probe, respect that and move on. Don't force it.
+
+Control tokens (CRITICAL — include these exactly as shown):
+- When you have enough signal and are ready to summarize, start your message with exactly "[CONFIRM]" (including brackets) followed by your summary message. Your summary should be: "So what I'm hearing is: [one sentence]. Does that capture it, or would you adjust anything?"
+- After the respondent confirms or adjusts your summary, start your final message with exactly "[CAPTURED]" followed by a brief acknowledgment (e.g., "Got it. Let's move to the next one.").
+- These tokens MUST be the very first characters in your message. No space before them.`;
+
+const ROLE_PROMPTS = {
+  'Leadership': `The respondent is in a leadership role. They likely think strategically and may give polished, big-picture answers. Your job is to push them toward specificity — concrete examples, specific people, particular moments that illustrate their strategic claims. If they say "we're an economic engine," ask what the engine produces for a specific person.`,
+  'Program Staff': `The respondent works directly with program participants. They see the transformation up close every day. They have stories. Lean into those stories. Ask about specific people (without needing last names), specific moments in the kitchen, specific before-and-after changes they've witnessed.`,
+  'Development': `The respondent works in development or communications. They think about how KFG is perceived externally. Ask them what language works when they're talking to donors or partners. What's the thing they say that makes people lean in? What's the pitch that doesn't work?`,
+  'Operations': `The respondent works in operations. They see the internal machinery — how money flows, how programs are structured, how the enterprise side connects to the mission side. Ask them about the mechanics. How would they explain what makes KFG financially different from a typical nonprofit?`,
+  'Board Member': `The respondent is a board member. They have strategic oversight and likely chose to be involved with KFG for a reason. Ask what drew them to this board specifically. What's the thing about KFG that no other organization they've been involved with can claim?`,
+  'Other': `The respondent's role is: {roleCustom}. Adapt your questions to their vantage point. Ask what they see from where they sit.`,
+};
+
+const QUESTION_PROMPTS = {
+  q1: `CURRENT QUESTION: "What is Kitchens for Good?"
+
+Your opening message must be exactly:
+"You're at a party. Someone asks you what Kitchens for Good is. What do you actually say?"
+
+Probing guidance:
+- If they use language from the current website ("transforming lives through culinary arts," "barriers to employment"), say something like: "That's the mission statement version. If you couldn't use any of those words, how would you explain it?"
+- If they mention programs, ask what the programs actually produce for people.
+- If they mention the enterprise/business side (SHOP, café, staffing), ask how that connects to the training mission.
+- If they mention "economic engine" or similar systemic language, ask what the engine produces for a specific person.
+- You are looking for: their natural, unscripted description of KFG.`,
+
+  q2: `CURRENT QUESTION: "Who is the most important audience?"
+
+Your opening message must be exactly:
+"If the KFG website could only reach one type of person — and everyone else would never see it — who should that person be?"
+
+Probing guidance:
+- If they say "donors" — what kind of donor? First-time? Major gift? What does that donor need to understand within 10 seconds?
+- If they say "participants/apprentices" — what's the moment a potential apprentice decides to apply? What convinces them?
+- If they say "employers" — what do employers need to believe about KFG graduates?
+- If they hedge ("it's really all of them equally"), gently push: "I hear you — but if you had to pick just one, the one person this site absolutely cannot fail to reach?"
+- You are looking for: a specific audience and what that audience needs to believe.`,
+
+  q3: `CURRENT QUESTION: "What does KFG replace?"
+
+Your opening message must be exactly:
+"Think about what someone's life looked like before they walked through KFG's doors. What was the alternative to KFG for them?"
+
+Probing guidance:
+- If they say "no opportunities" or "nothing" — push for the specific texture of that nothing. "What does 'no opportunities' actually look like day to day for someone?"
+- If they mention a specific person's "before" story, stay on that thread. Ask what changed.
+- If they think about it from the supporter angle, ask: "For someone considering donating — what's the alternative? What happens if they give that money to a different organization instead?"
+- You are looking for: the specific "before state" that KFG interrupts.`,
+
+  q4: `CURRENT QUESTION: "What makes KFG different?"
+
+Your opening message must be exactly:
+"There are other workforce training programs in San Diego. What can KFG say that none of them can?"
+
+Probing guidance:
+- If they say "we care more" or "our culture" — ask them to describe a moment that proves it. "What's something that happened here that couldn't happen at another program?"
+- If they mention the economic/enterprise model, ask them to walk you through the loop: how does revenue from the enterprises actually make it back to the programs?
+- If they mention a specific outcome (like an entrepreneur's success), stay on that thread and extract the details.
+- If they mention the state certification, ask why that matters in practice, not just on paper.
+- You are looking for: the differentiator, backed by evidence or story.`,
+
+  q5: `CURRENT QUESTION: "The 10-second belief."
+
+Your opening message must be exactly:
+"Last one. Someone lands on the KFG website. They'll give you 10 seconds before they decide to stay or leave. After those 10 seconds, what should they believe?"
+
+Probing guidance:
+- If the answer is compound (multiple things), ask: "If you had to pick just the one belief — the single thing — what is it?"
+- If it's abstract ("that we matter"), ask: "What would they need to see or read to actually believe that in 10 seconds?"
+- This question usually needs the shortest conversation. Often one follow-up is enough. Don't over-probe here.
+- You are looking for: a single, focused belief statement.`,
+};
+
+const EXCHANGE_PROMPTS = {
+  0: 'This is the start of the conversation. Send your opening message.',
+  1: 'The respondent has given their first answer. Probe for specificity.',
+  2: 'This is the second exchange. If you have strong signal, move to confirmation. If the answer is still generic, probe one more time.',
+  3: 'This is the third exchange. You should move to confirmation now unless the respondent is mid-story. Start your next message with [CONFIRM].',
+  4: 'You must confirm now. Start your next message with [CONFIRM].',
+};
+
+function getExchangePrompt(count) {
+  if (count >= 4) return EXCHANGE_PROMPTS[4];
+  return EXCHANGE_PROMPTS[count] || EXCHANGE_PROMPTS[4];
+}
+
+const DISTILLATION_SYSTEM_PROMPT = `You are a research analyst extracting structured insights from an interview transcript about organizational positioning.
+
+You will receive a conversation transcript between an interviewer and a staff member at Kitchens for Good (a San Diego nonprofit / social enterprise).
+
+Extract the following and return ONLY valid JSON with no other text:
+
+{
+  "core_insight": "One to two sentences capturing the respondent's actual belief/answer after probing. Use their language where possible, not institutional language. This should be the answer that emerged after the interviewer pushed past the first response.",
+  "stories": "Any specific people, moments, or examples the respondent mentioned. Include names (first only), numbers, and concrete details. If none were mentioned, use null.",
+  "notable_language": "Direct phrases or words the respondent used that are vivid, specific, or surprising. These are exact quotes — short phrases, not full sentences. If nothing stands out, use null.",
+  "confirmed_summary": "The one-sentence summary the respondent confirmed or adjusted at the end of the conversation."
+}
+
+Return ONLY the JSON object. No markdown fences. No preamble. No explanation.`;
+
+// ============ DOM REFERENCES ============
+const $steps = {
+  0: document.getElementById('step0'),
+  1: document.getElementById('step1'),
+  2: document.getElementById('step2'),
+  7: document.getElementById('step7'),
+};
+const $nameInput = document.getElementById('nameInput');
+const $otherRoleInput = document.getElementById('otherRoleInput');
+const $otherRoleWrapper = document.getElementById('otherRoleWrapper');
+const $roleCards = document.querySelectorAll('.role-card');
+const $continueBtn = document.getElementById('continueBtn');
+const $backBtn = document.getElementById('backBtn');
+const $messagesThread = document.getElementById('messagesThread');
+const $chatTextarea = document.getElementById('chatTextarea');
+const $sendBtn = document.getElementById('sendBtn');
+const $progressContainer = document.getElementById('progressContainer');
+const $progressFill = document.getElementById('progressFill');
+const $progressLabel = document.getElementById('progressLabel');
+const $typingIndicator = document.getElementById('typingIndicator');
+const $chatInputArea = document.getElementById('chatInputArea');
+const $bottomBar = document.getElementById('bottomBar');
+
+// ============ SYSTEM PROMPT BUILDER ============
+function buildSystemPrompt(respondent, questionKey, exchangeCount) {
+  let rolePrompt = ROLE_PROMPTS[respondent.role] || ROLE_PROMPTS['Other'];
+  if (respondent.role === 'Other') {
+    rolePrompt = rolePrompt.replace('{roleCustom}', respondent.roleCustom || 'unspecified');
+  }
+  const questionPrompt = QUESTION_PROMPTS[questionKey];
+  const exchangePrompt = getExchangePrompt(exchangeCount);
+  return BASE_PROMPT + '\n\n---\n\n' + rolePrompt + '\n\n---\n\n' + questionPrompt + '\n\n---\n\n' + exchangePrompt;
+}
+
+// ============ API CALLS ============
+async function sendChatMessage(systemPrompt, messages) {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system: systemPrompt,
+      messages: messages,
+      max_tokens: 300,
+      temperature: 0.7,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Chat API error: ' + response.status);
+  }
+  return response;
+}
+
+async function sendDistillRequest(systemPrompt, userMessage) {
+  const response = await fetch('/api/distill', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }],
+      max_tokens: 500,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error('Distill API error: ' + response.status);
+  }
+  const data = await response.json();
+  return data.content;
+}
+
+// ============ STREAMING PARSER (OpenRouter/OpenAI SSE) ============
+async function parseSSEStream(response, onToken, onComplete, onError) {
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        onComplete();
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(':')) continue;
+        if (!trimmed.startsWith('data: ')) continue;
+
+        const data = trimmed.slice(6);
+        if (data === '[DONE]') {
+          onComplete();
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(data);
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) {
+            onToken(content);
+          }
+        } catch (e) {
+          // Skip unparseable chunks
+        }
+      }
+    }
+  } catch (err) {
+    onError(err);
+  }
+}
+
+// ============ CONVERSATION ENGINE ============
+function getQuestionKeyForStep(step) {
+  const map = { 2: 'q1', 3: 'q2', 4: 'q3', 5: 'q4', 6: 'q5' };
+  return map[step];
+}
+
+async function startQuestion(questionKey) {
+  const qState = appState.questions[questionKey];
+  qState.messages = [];
+  qState.exchangeCount = 0;
+  qState.phase = 'opening';
+  qState.distilled = null;
+  qState.transcript = '';
+
+  // Clear messages thread using DOM API
+  while ($messagesThread.firstChild) {
+    $messagesThread.removeChild($messagesThread.firstChild);
+  }
+  showTypingIndicator();
+  setInputEnabled(false);
+
+  const systemPrompt = buildSystemPrompt(appState.respondent, questionKey, 0);
+
+  try {
+    const response = await sendChatMessage(systemPrompt, []);
+    let fullText = '';
+    let bubble = null;
+
+    hideTypingIndicator();
+    bubble = createEmptyAIBubble();
+
+    await parseSSEStream(
+      response,
+      function(token) {
+        fullText += token;
+        updateBubbleText(bubble, fullText);
+      },
+      function() {
+        qState.messages.push({ role: 'assistant', content: fullText });
+        qState.phase = 'probing';
+        setInputEnabled(true);
+      },
+      function(err) {
+        console.error('Stream error:', err);
+        updateBubbleText(bubble, fullText || 'Something went wrong. Please refresh and try again.');
+        setInputEnabled(true);
+      }
+    );
+  } catch (err) {
+    console.error('Chat error:', err);
+    hideTypingIndicator();
+    var errorBubble = createEmptyAIBubble();
+    updateBubbleText(errorBubble, 'Something went wrong. Please refresh and try again.');
+  }
+}
+
+async function handleUserMessage(text) {
+  const questionKey = getQuestionKeyForStep(appState.currentStep);
+  if (!questionKey) return;
+
+  const qState = appState.questions[questionKey];
+
+  // Add user bubble
+  addMessage('user', text);
+  qState.messages.push({ role: 'user', content: text });
+  qState.exchangeCount++;
+
+  // Clear input, disable
+  $chatTextarea.value = '';
+  $chatTextarea.style.height = 'auto';
+  updateSendButtonState();
+  setInputEnabled(false);
+  showTypingIndicator();
+
+  const systemPrompt = buildSystemPrompt(appState.respondent, questionKey, qState.exchangeCount);
+
+  try {
+    const response = await sendChatMessage(systemPrompt, qState.messages);
+    let fullText = '';
+    let tokenBuffer = '';
+    let tokenChecked = false;
+    let displayText = '';
+    let bubble = null;
+
+    hideTypingIndicator();
+    bubble = createEmptyAIBubble();
+
+    await parseSSEStream(
+      response,
+      function(token) {
+        fullText += token;
+
+        if (!tokenChecked) {
+          tokenBuffer += token;
+          if (tokenBuffer.length >= 15 || tokenBuffer.includes('.') || tokenBuffer.includes('?')) {
+            tokenChecked = true;
+            if (tokenBuffer.startsWith('[CONFIRM]')) {
+              qState.phase = 'confirming';
+              displayText = tokenBuffer.slice(9);
+            } else if (tokenBuffer.startsWith('[CAPTURED]')) {
+              qState.phase = 'distilling';
+              displayText = tokenBuffer.slice(10);
+            } else {
+              displayText = tokenBuffer;
+            }
+            updateBubbleText(bubble, displayText.trimStart());
+          }
+        } else {
+          displayText += token;
+          updateBubbleText(bubble, displayText.trimStart());
+        }
+      },
+      function() {
+        // Handle case where stream ends before buffer threshold
+        if (!tokenChecked) {
+          tokenChecked = true;
+          if (tokenBuffer.startsWith('[CONFIRM]')) {
+            qState.phase = 'confirming';
+            displayText = tokenBuffer.slice(9);
+          } else if (tokenBuffer.startsWith('[CAPTURED]')) {
+            qState.phase = 'distilling';
+            displayText = tokenBuffer.slice(10);
+          } else {
+            displayText = tokenBuffer;
+          }
+          updateBubbleText(bubble, displayText.trimStart());
+        }
+
+        // Store the full text without control tokens
+        let storedContent = fullText;
+        if (fullText.startsWith('[CONFIRM]')) storedContent = fullText.slice(9).trimStart();
+        if (fullText.startsWith('[CAPTURED]')) storedContent = fullText.slice(10).trimStart();
+        qState.messages.push({ role: 'assistant', content: storedContent });
+
+        if (qState.phase === 'distilling') {
+          handleCapture(questionKey);
+        } else {
+          setInputEnabled(true);
+        }
+      },
+      function(err) {
+        console.error('Stream error:', err);
+        updateBubbleText(bubble, displayText || 'Something went wrong. Please try again.');
+        setInputEnabled(true);
+      }
+    );
+  } catch (err) {
+    console.error('Chat error:', err);
+    hideTypingIndicator();
+    var errorBubble = createEmptyAIBubble();
+    updateBubbleText(errorBubble, 'Something went wrong. Please try again.');
+    setInputEnabled(true);
+  }
+}
+
+async function handleCapture(questionKey) {
+  setInputEnabled(false);
+
+  try {
+    await runDistillation(questionKey);
+    await submitQuestionData(questionKey, QUESTIONS[questionKey].title);
+
+    // Wait then advance
+    await new Promise(function(resolve) { setTimeout(resolve, 500); });
+
+    const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+    const currentIndex = qKeys.indexOf(questionKey);
+    if (currentIndex < 4) {
+      goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
+    } else {
+      goToStep(7);
+    }
+  } catch (err) {
+    console.error('Capture error:', err);
+    // Still try to advance even on distillation failure
+    const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+    const currentIndex = qKeys.indexOf(questionKey);
+    if (currentIndex < 4) {
+      goToStep(QUESTIONS[qKeys[currentIndex + 1]].step);
+    } else {
+      goToStep(7);
+    }
+  }
+}
+
+// ============ DISTILLATION ============
+function formatTranscript(messages, respondentName) {
+  return messages.map(function(m) {
+    if (m.role === 'assistant') return 'Interviewer: ' + m.content;
+    return respondentName + ': ' + m.content;
+  }).join('\n');
+}
+
+async function runDistillation(questionKey) {
+  const qState = appState.questions[questionKey];
+  const transcript = formatTranscript(qState.messages, appState.respondent.name);
+  const role = appState.respondent.role === 'Other'
+    ? appState.respondent.roleCustom
+    : appState.respondent.role;
+
+  const userMessage = 'RESPONDENT: ' + appState.respondent.name + ' (' + role + ')\nQUESTION: ' + QUESTIONS[questionKey].title + '\n\nTRANSCRIPT:\n---\n' + transcript + '\n---';
+
+  const responseText = await sendDistillRequest(DISTILLATION_SYSTEM_PROMPT, userMessage);
+  const distilled = parseDistillation(responseText);
+
+  qState.distilled = distilled;
+  qState.transcript = transcript;
+}
+
+function parseDistillation(responseText) {
+  try {
+    let cleaned = responseText.trim();
+    // Strip markdown fences if present
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
+    }
+    const parsed = JSON.parse(cleaned);
+    // Validate required fields
+    if (!parsed.core_insight) {
+      throw new Error('Missing core_insight');
+    }
+    return {
+      core_insight: parsed.core_insight,
+      stories: parsed.stories || null,
+      notable_language: parsed.notable_language || null,
+      confirmed_summary: parsed.confirmed_summary || null,
+    };
+  } catch (e) {
+    console.error('Distillation parse error:', e);
+    return {
+      core_insight: responseText,
+      stories: null,
+      notable_language: null,
+      confirmed_summary: null,
+    };
+  }
+}
+
+// ============ GOOGLE SHEETS SUBMISSION ============
+async function postToSheet(type, data) {
+  if (!GOOGLE_SCRIPT_URL) {
+    console.warn('GOOGLE_SCRIPT_URL not configured, skipping sheet submission');
+    return;
+  }
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ type: type, ...data }),
+    });
+  } catch (err) {
+    console.error('Sheet submission error:', err);
+  }
+}
+
+async function retryPost(fn, maxRetries) {
+  maxRetries = maxRetries || 3;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await fn();
+      return;
+    } catch (err) {
+      if (i === maxRetries - 1) {
+        throw err;
+      }
+      const delay = Math.pow(2, i + 1) * 1000;
+      await new Promise(function(resolve) { setTimeout(resolve, delay); });
+    }
+  }
+}
+
+async function submitQuestionData(questionKey, questionTitle) {
+  const qState = appState.questions[questionKey];
+  const transcript = formatTranscript(qState.messages, appState.respondent.name);
+
+  try {
+    await retryPost(function() {
+      return postToSheet('transcript', {
+        name: appState.respondent.name,
+        role: appState.respondent.role === 'Other' ? appState.respondent.roleCustom : appState.respondent.role,
+        question: questionKey,
+        question_title: questionTitle,
+        transcript: transcript,
+        exchange_count: qState.exchangeCount,
+      });
+    });
+    appState.submissions[questionKey] = true;
+  } catch (err) {
+    console.error('Submit question data error:', err);
+    // localStorage fallback
+    try {
+      localStorage.setItem('kfg_backup_' + Date.now(), JSON.stringify({
+        type: 'transcript',
+        questionKey: questionKey,
+        name: appState.respondent.name,
+        role: appState.respondent.role,
+        transcript: transcript,
+        exchangeCount: qState.exchangeCount,
+      }));
+    } catch (e) {
+      console.error('localStorage fallback failed:', e);
+    }
+  }
+}
+
+async function submitFinalResponse() {
+  const role = appState.respondent.role === 'Other'
+    ? appState.respondent.roleCustom
+    : appState.respondent.role;
+
+  const row = {
+    name: appState.respondent.name,
+    role: role,
+    completed: true,
+  };
+
+  const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+  for (let i = 0; i < qKeys.length; i++) {
+    const qk = qKeys[i];
+    const d = appState.questions[qk].distilled;
+    if (d) {
+      row[qk + '_core'] = d.core_insight;
+      row[qk + '_stories'] = d.stories;
+      row[qk + '_language'] = d.notable_language;
+      row[qk + '_confirmed'] = d.confirmed_summary;
+    }
+  }
+
+  try {
+    await retryPost(function() {
+      return postToSheet('response', row);
+    });
+    appState.submissions.complete = true;
+  } catch (err) {
+    console.error('Submit final response error:', err);
+    try {
+      localStorage.setItem('kfg_backup_' + Date.now(), JSON.stringify({
+        type: 'response',
+        ...row,
+      }));
+    } catch (e) {
+      console.error('localStorage fallback failed:', e);
+    }
+  }
+}
+
+// ============ UI RENDERING ============
+function addMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = 'message ' + (role === 'assistant' ? 'assistant-message' : 'user-message');
+  div.textContent = content;
+  $messagesThread.appendChild(div);
+  $messagesThread.scrollTop = $messagesThread.scrollHeight;
+  return div;
+}
+
+function createEmptyAIBubble() {
+  const div = document.createElement('div');
+  div.className = 'message assistant-message';
+  $messagesThread.appendChild(div);
+  $messagesThread.scrollTop = $messagesThread.scrollHeight;
+  return div;
+}
+
+function updateBubbleText(bubble, text) {
+  bubble.textContent = text;
+  $messagesThread.scrollTop = $messagesThread.scrollHeight;
+}
+
+function showTypingIndicator() {
+  $typingIndicator.classList.add('visible');
+  $messagesThread.scrollTop = $messagesThread.scrollHeight;
+}
+
+function hideTypingIndicator() {
+  $typingIndicator.classList.remove('visible');
+}
+
+function updateProgressBar(step) {
+  if (step === 0 || step === 7) {
+    $progressContainer.classList.add('hidden');
+    return;
+  }
+
+  $progressContainer.classList.remove('hidden');
+
+  if (step === 1) {
+    $progressFill.style.width = '10%';
+    $progressLabel.textContent = 'About you';
+    return;
+  }
+
+  const qKey = getQuestionKeyForStep(step);
+  if (qKey && QUESTIONS[qKey]) {
+    $progressFill.style.width = QUESTIONS[qKey].progress + '%';
+    const qNum = parseInt(qKey.slice(1));
+    $progressLabel.textContent = 'Question ' + qNum + ' of 5';
+  }
+}
+
+function setInputEnabled(enabled) {
+  $chatTextarea.disabled = !enabled;
+  $sendBtn.disabled = !enabled || !$chatTextarea.value.trim();
+  if (enabled) {
+    setTimeout(function() { $chatTextarea.focus(); }, 100);
+  }
+}
+
+function updateSendButtonState() {
+  const hasText = $chatTextarea.value.trim().length > 0;
+  $sendBtn.disabled = !hasText || $chatTextarea.disabled;
+  if (hasText && !$chatTextarea.disabled) {
+    $sendBtn.classList.add('active');
+  } else {
+    $sendBtn.classList.remove('active');
+  }
+}
+
+// ============ STEP NAVIGATION ============
+let isTransitioning = false;
+
+function goToStep(newStep) {
+  if (newStep === appState.currentStep && getStepEl(newStep) && getStepEl(newStep).classList.contains('active')) return;
+  if (isTransitioning) return;
+
+  isTransitioning = true;
+  const oldStep = appState.currentStep;
+
+  // Determine which DOM element to use for old and new steps
+  // Steps 2-6 all share step2 DOM element
+  function getStepEl(step) {
+    if (step >= 2 && step <= 6) return $steps[2];
+    return $steps[step];
+  }
+
+  const oldEl = getStepEl(oldStep);
+  const newEl = getStepEl(newStep);
+
+  function finishTransition() {
+    if (oldEl && oldEl !== newEl) {
+      oldEl.classList.remove('active', 'fade-out');
+    }
+    if (newEl) {
+      newEl.classList.add('active');
+      newEl.classList.add('fade-in');
+      setTimeout(function() {
+        newEl.classList.remove('fade-in');
+        isTransitioning = false;
+      }, 300);
+    } else {
+      isTransitioning = false;
+    }
+
+    appState.currentStep = newStep;
+    updateProgressBar(newStep);
+
+    // Show/hide bottom bar vs chat input
+    if (newStep >= 2 && newStep <= 6) {
+      $bottomBar.classList.add('hidden');
+      $chatInputArea.classList.add('visible');
+    } else if (newStep === 7) {
+      $bottomBar.classList.add('hidden');
+      $chatInputArea.classList.remove('visible');
+    } else {
+      $bottomBar.classList.remove('hidden');
+      $chatInputArea.classList.remove('visible');
+    }
+
+    // Back button visibility
+    if (newStep === 0 || newStep === 7) {
+      $backBtn.classList.add('hidden');
+    } else {
+      $backBtn.classList.remove('hidden');
+    }
+
+    // Continue button text
+    if (newStep === 0) {
+      $continueBtn.textContent = 'Get Started';
+      $continueBtn.disabled = false;
+    } else if (newStep === 1) {
+      $continueBtn.textContent = 'Continue';
+      validateNameRole();
+    }
+
+    // Start question if entering chat step
+    if (newStep >= 2 && newStep <= 6) {
+      const qKey = getQuestionKeyForStep(newStep);
+      if (qKey) startQuestion(qKey);
+    }
+
+    // Submit final if entering thank you
+    if (newStep === 7) {
+      submitFinalResponse();
+    }
+  }
+
+  if (oldEl && oldEl.classList.contains('active') && oldEl !== newEl) {
+    oldEl.classList.add('fade-out');
+    setTimeout(finishTransition, 200);
+  } else {
+    if (oldEl && oldEl === newEl) {
+      // Same element (chat steps), just update state
+      oldEl.classList.remove('fade-out');
+    }
+    finishTransition();
+  }
+}
+
+function validateNameRole() {
+  const name = $nameInput.value.trim();
+  const role = appState.respondent.role;
+  const otherRole = $otherRoleInput.value.trim();
+
+  let valid = name.length > 0 && role.length > 0;
+  if (role === 'Other' && otherRole.length === 0) {
+    valid = false;
+  }
+
+  appState.respondent.name = name;
+  if (role === 'Other') {
+    appState.respondent.roleCustom = otherRole;
+  }
+
+  $continueBtn.disabled = !valid;
+}
+
+// ============ EVENT LISTENERS ============
+$continueBtn.addEventListener('click', function() {
+  if (appState.currentStep === 0) {
+    goToStep(1);
+  } else if (appState.currentStep === 1) {
+    goToStep(2);
+  }
+});
+
+$backBtn.addEventListener('click', function() {
+  if (appState.currentStep === 1) {
+    goToStep(0);
+  }
+  // Don't allow back during chat steps
+});
+
+$roleCards.forEach(function(card) {
+  card.addEventListener('click', function() {
+    $roleCards.forEach(function(c) { c.classList.remove('selected'); });
+    card.classList.add('selected');
+    appState.respondent.role = card.dataset.role;
+
+    if (card.dataset.role === 'Other') {
+      $otherRoleWrapper.classList.add('visible');
+      setTimeout(function() { $otherRoleInput.focus(); }, 100);
+    } else {
+      $otherRoleWrapper.classList.remove('visible');
+    }
+
+    validateNameRole();
+  });
+});
+
+$nameInput.addEventListener('input', validateNameRole);
+$otherRoleInput.addEventListener('input', validateNameRole);
+
+$sendBtn.addEventListener('click', function() {
+  const text = $chatTextarea.value.trim();
+  if (text && !$chatTextarea.disabled) {
+    handleUserMessage(text);
+  }
+});
+
+$chatTextarea.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const text = $chatTextarea.value.trim();
+    if (text && !$chatTextarea.disabled) {
+      handleUserMessage(text);
+    }
+  }
+});
+
+$chatTextarea.addEventListener('input', function() {
+  // Auto-resize
+  $chatTextarea.style.height = 'auto';
+  $chatTextarea.style.height = Math.min($chatTextarea.scrollHeight, 120) + 'px';
+  updateSendButtonState();
+});
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', function() {
+  goToStep(0);
+});
+
+// Handle case where DOMContentLoaded already fired
+if (document.readyState !== 'loading') {
+  goToStep(0);
+}
+</script>
+</body>
+</html>
