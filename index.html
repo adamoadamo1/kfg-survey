@@ -428,12 +428,14 @@
   }
 
   .chat-input-area.visible {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 
   .chat-input-wrapper {
     max-width: 640px;
-    margin: 0 auto;
+    width: 100%;
     position: relative;
   }
 
@@ -607,6 +609,13 @@
     border-color: var(--green);
   }
 
+  .review-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
   .review-submit-btn {
     background: var(--green);
     color: white;
@@ -618,7 +627,6 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 200ms ease-out;
-    margin-top: 12px;
     display: block;
     width: 100%;
   }
@@ -627,6 +635,52 @@
     background: var(--green-light);
     transform: translateY(-0.5px);
     box-shadow: 0 4px 12px rgba(62, 80, 60, 0.15);
+  }
+
+  .review-rework-btn {
+    background: transparent;
+    color: var(--green);
+    border: 1px solid var(--green);
+    border-radius: 6px;
+    padding: 10px 28px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    display: block;
+    width: 100%;
+  }
+
+  .review-rework-btn:hover {
+    background: var(--green-pale);
+    transform: translateY(-0.5px);
+  }
+
+  .ready-to-submit-btn {
+    display: none;
+    background: var(--green-pale);
+    color: var(--green);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    margin-bottom: 8px;
+    align-self: center;
+  }
+
+  .ready-to-submit-btn.visible {
+    display: inline-block;
+  }
+
+  .ready-to-submit-btn:hover {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
   }
 
   /* Thank you screen */
@@ -823,6 +877,7 @@
 
 <!-- Chat input area -->
 <div class="chat-input-area" id="chatInputArea">
+  <button class="ready-to-submit-btn" id="readyToSubmitBtn">I'm ready to submit</button>
   <div class="chat-input-wrapper">
     <textarea class="chat-textarea" id="chatTextarea" rows="1" placeholder="Type your response..."></textarea>
     <button class="send-btn" id="sendBtn" disabled aria-label="Send message">
@@ -885,7 +940,8 @@ Your rules:
 
 Control tokens (CRITICAL — include these exactly as shown):
 - When you have enough signal and are ready to summarize, start your message with exactly "[CONFIRM]" (including brackets) followed by a single-sentence summary of what you heard. Just the summary sentence, nothing else — no question, no "Does that capture it?", no follow-up. Example: "[CONFIRM] KFG is a nonprofit that uses food as a vehicle to help people rebuild their lives through paid culinary training."
-- The "[CONFIRM]" token MUST be the very first characters in your message. No space before it.`;
+- The "[CONFIRM]" token MUST be the very first characters in your message. No space before it.
+- If the respondent wants to continue refining after you've already sent [CONFIRM], continue probing as normal and send [CONFIRM] again when you have an updated summary.`;
 
 const ROLE_PROMPTS = {
   'Leadership': `The respondent is in a leadership role. They likely think strategically and may give polished, big-picture answers. Your job is to push them toward specificity — concrete examples, specific people, particular moments that illustrate their strategic claims. If they say "we're an economic engine," ask what the engine produces for a specific person.`,
@@ -1005,7 +1061,19 @@ const $progressFill = document.getElementById('progressFill');
 const $progressLabel = document.getElementById('progressLabel');
 const $typingIndicator = document.getElementById('typingIndicator');
 const $chatInputArea = document.getElementById('chatInputArea');
+const $readyToSubmitBtn = document.getElementById('readyToSubmitBtn');
 const $bottomBar = document.getElementById('bottomBar');
+
+// "Ready to submit" button — re-shows the review card with last summary
+$readyToSubmitBtn.addEventListener('click', function() {
+  const questionKey = getQuestionKeyForStep(appState.currentStep);
+  if (!questionKey) return;
+  const qState = appState.questions[questionKey];
+  if (qState.lastConfirmSummary) {
+    qState.phase = 'confirming';
+    showReviewCard(questionKey, qState.lastConfirmSummary);
+  }
+});
 
 // ============ SYSTEM PROMPT BUILDER ============
 function buildSystemPrompt(respondent, questionKey, exchangeCount) {
@@ -1246,6 +1314,7 @@ async function handleUserMessage(text) {
           isProcessing = false;
           // Extract just the summary sentence from the confirm text
           var summaryText = fullText.slice(9).trimStart();
+          qState.lastConfirmSummary = summaryText;
           showReviewCard(questionKey, summaryText);
         } else {
           console.log('[DEBUG] Stream complete for', questionKey, '— phase:', qState.phase);
@@ -1301,12 +1370,19 @@ function showReviewCard(questionKey, summaryText) {
   textarea.value = summary;
   card.appendChild(textarea);
 
-  const btn = document.createElement('button');
-  btn.className = 'review-submit-btn';
-  btn.textContent = 'Submit & Continue';
-  btn.addEventListener('click', async function() {
-    btn.disabled = true;
-    btn.textContent = 'Submitting\u2026';
+  // Hide "Ready to submit" button while review card is showing
+  document.getElementById('readyToSubmitBtn').classList.remove('visible');
+
+  const btnGroup = document.createElement('div');
+  btnGroup.className = 'review-btn-group';
+
+  const submitBtn = document.createElement('button');
+  submitBtn.className = 'review-submit-btn';
+  submitBtn.textContent = 'Submit & Continue';
+  submitBtn.addEventListener('click', async function() {
+    submitBtn.disabled = true;
+    reworkBtn.disabled = true;
+    submitBtn.textContent = 'Submitting\u2026';
 
     // Update state with possibly edited text
     const editedText = textarea.value.trim();
@@ -1336,7 +1412,28 @@ function showReviewCard(questionKey, summaryText) {
       goToStep(7);
     }
   });
-  card.appendChild(btn);
+  btnGroup.appendChild(submitBtn);
+
+  const reworkBtn = document.createElement('button');
+  reworkBtn.className = 'review-rework-btn';
+  reworkBtn.textContent = 'Let\u2019s work on this more';
+  reworkBtn.addEventListener('click', function() {
+    const qState = appState.questions[questionKey];
+    // Store current summary (possibly edited) for later re-use
+    qState.lastConfirmSummary = textarea.value.trim();
+    qState.phase = 'probing';
+
+    // Remove review card, re-enable chat
+    card.remove();
+    $chatInputArea.classList.add('visible');
+    setInputEnabled(true);
+
+    // Show the "Ready to submit" pill button
+    document.getElementById('readyToSubmitBtn').classList.add('visible');
+  });
+  btnGroup.appendChild(reworkBtn);
+
+  card.appendChild(btnGroup);
 
   $messagesThread.appendChild(card);
   $messagesThread.scrollTop = $messagesThread.scrollHeight;
@@ -1577,6 +1674,9 @@ function goToStep(newStep) {
 
     appState.currentStep = newStep;
     updateProgressBar(newStep);
+
+    // Hide "Ready to submit" on step change
+    $readyToSubmitBtn.classList.remove('visible');
 
     // Show/hide bottom bar vs chat input
     if (newStep >= 2 && newStep <= 6) {
