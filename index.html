@@ -740,7 +740,7 @@
 
 <script>
 // ============ CONFIG ============
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwqllwYzF3Y8lba36EeJ5E9v5Be17hr5El4NpUurtpaUlzl2mEmzhhAel0DbfPAlx_HwA/exec';
+const SHEETS_API_URL = '/api/sheets';
 
 const QUESTIONS = {
   q1: { key: 'q1', title: 'What is KFG?', step: 2, progress: 28 },
@@ -1260,18 +1260,14 @@ function parseDistillation(responseText) {
 
 // ============ GOOGLE SHEETS SUBMISSION ============
 async function postToSheet(type, data) {
-  if (!GOOGLE_SCRIPT_URL) {
-    console.warn('GOOGLE_SCRIPT_URL not configured, skipping sheet submission');
-    return;
-  }
-  // no-cors means opaque response — we can only detect network errors (thrown)
-  // so we let fetch throw on network failure for retry logic to catch
-  await fetch(GOOGLE_SCRIPT_URL, {
+  const resp = await fetch(SHEETS_API_URL, {
     method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ type: type, ...data }),
   });
+  if (!resp.ok) {
+    throw new Error('Sheet submission failed: ' + resp.status);
+  }
 }
 
 async function retryPost(fn, maxRetries) {

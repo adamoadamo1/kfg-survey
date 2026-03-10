@@ -2,6 +2,7 @@
   "routes": [
     { "src": "/api/chat", "dest": "/api/chat.js" },
     { "src": "/api/distill", "dest": "/api/distill.js" },
+    { "src": "/api/sheets", "dest": "/api/sheets.js" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
