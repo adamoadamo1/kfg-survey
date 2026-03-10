@@ -711,7 +711,7 @@
           </svg>
         </div>
         <h2 class="thankyou-headline">Thank you.</h2>
-        <p class="thankyou-body">Your perspective helps us build something that actually sounds like us. We'll share what we learn from everyone's responses soon.</p>
+        <p class="thankyou-body">Thank you for your time and your feedback. This is all going to help make Kitchens for Good's new website the best it can be.</p>
       </div>
     </div>
   </main>
@@ -1180,7 +1180,6 @@ async function handleCapture(questionKey) {
 
   try {
     await runDistillation(questionKey);
-    await submitQuestionData(questionKey, QUESTIONS[questionKey].title);
 
     // Wait then advance
     await new Promise(function(resolve) { setTimeout(resolve, 500); });
@@ -1286,40 +1285,6 @@ async function retryPost(fn, maxRetries) {
   }
 }
 
-async function submitQuestionData(questionKey, questionTitle) {
-  const qState = appState.questions[questionKey];
-  const transcript = formatTranscript(qState.messages, appState.respondent.name);
-
-  try {
-    await retryPost(function() {
-      return postToSheet('transcript', {
-        name: appState.respondent.name,
-        role: appState.respondent.role === 'Other' ? appState.respondent.roleCustom : appState.respondent.role,
-        question: questionKey,
-        question_title: questionTitle,
-        transcript: transcript,
-        exchange_count: qState.exchangeCount,
-      });
-    });
-    appState.submissions[questionKey] = true;
-  } catch (err) {
-    console.error('Submit question data error:', err);
-    // localStorage fallback
-    try {
-      localStorage.setItem('kfg_backup_' + Date.now(), JSON.stringify({
-        type: 'transcript',
-        questionKey: questionKey,
-        name: appState.respondent.name,
-        role: appState.respondent.role,
-        transcript: transcript,
-        exchangeCount: qState.exchangeCount,
-      }));
-    } catch (e) {
-      console.error('localStorage fallback failed:', e);
-    }
-  }
-}
-
 async function submitFinalResponse() {
   const role = appState.respondent.role === 'Other'
     ? appState.respondent.roleCustom
@@ -1328,18 +1293,18 @@ async function submitFinalResponse() {
   const row = {
     name: appState.respondent.name,
     role: role,
-    completed: true,
+    q1: '',
+    q2: '',
+    q3: '',
+    q4: '',
+    q5: '',
   };
 
-  const qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
-  for (let i = 0; i < qKeys.length; i++) {
-    const qk = qKeys[i];
-    const d = appState.questions[qk].distilled;
-    if (d) {
-      row[qk + '_core'] = d.core_insight;
-      row[qk + '_stories'] = d.stories;
-      row[qk + '_language'] = d.notable_language;
-      row[qk + '_confirmed'] = d.confirmed_summary;
+  var qKeys = ['q1', 'q2', 'q3', 'q4', 'q5'];
+  for (var i = 0; i < qKeys.length; i++) {
+    var d = appState.questions[qKeys[i]].distilled;
+    if (d && d.confirmed_summary) {
+      row[qKeys[i]] = d.confirmed_summary;
     }
   }
 
